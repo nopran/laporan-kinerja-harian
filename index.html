@@ -399,7 +399,7 @@
   .doc-sign-label { line-height: 1.6; }
   .doc-sign-img { height: 72px; display: flex; align-items: flex-end; justify-content: center; margin: 10px 0 0; }
   .doc-sign-img img { max-height: 70px; max-width: 180px; object-fit: contain; }
-  .doc-sign-underline { border-top: 1.5px solid #111; width: 75%; margin: 6px auto 0; }
+  .doc-sign-underline { display: none; }
   .doc-sign-name { font-weight: bold; font-size: 12.5px; margin-top: 5px; }
 
   /* FOOTER CREDIT */
@@ -495,17 +495,17 @@
     .actions { flex-direction: column; }
     .doc-preview { padding: 20px 14px; }
     .section-card { padding: 18px 14px; }
-    .entries-table { display: none; }
-    #mobile-entries { display: block; }
+    .entries-table { display: none !important; }
+    #mobile-entries { display: block !important; }
     .save-banner { flex-direction: column; align-items: flex-start; }
     .btn-save-main { width: 100%; justify-content: center; }
   }
   @media (min-width: 641px) {
-    #mobile-entries { display: none; }
+    .entries-table { display: table !important; }
+    #mobile-entries { display: none !important; }
   }
 
   /* MOBILE CARD VIEW for entries */
-  #mobile-entries { display: none; }
   .entry-card {
     background: var(--card);
     border: 2px solid var(--border);
@@ -852,6 +852,9 @@ function switchTab(name) {
   document.getElementById('panel-' + name).classList.add('active');
   const tabMap = { form: 0, kegiatan: 1, ttd: 2, preview: 3 };
   document.querySelectorAll('.tab-btn')[tabMap[name]].classList.add('active');
+  if (name === 'kegiatan') {
+    renderMobileEntries();
+  }
 }
 
 // ─── ENTRIES ─────────────────────────────────────────────
@@ -877,7 +880,7 @@ function addRow(data) {
   // Desktop table row
   tr.innerHTML = `
     <td><span class="entry-row-num">${idx}</span></td>
-    <td><input class="inp-tanggal" type="date" value="${d.tanggal}" onchange="autoHari(this); syncMobileCard(this); scheduleAutoSave()"></td>
+    <td><input class="inp-tanggal" type="date" value="${d.tanggal}" onchange="autoHari(this); scheduleAutoSave()"></td>
     <td><input class="inp-hari" type="text" value="${d.hari}" placeholder="Senin" oninput="scheduleAutoSave()"></td>
     <td><input class="inp-uraian" type="text" value="${d.uraian}" placeholder="Uraian kegiatan..." oninput="scheduleAutoSave()"></td>
     <td><input class="inp-link" type="text" value="${d.link}" placeholder="https://drive.google.com/..." oninput="scheduleAutoSave()"></td>
@@ -891,59 +894,66 @@ function addRow(data) {
 function renderMobileEntries() {
   const container = document.getElementById('mobile-entries');
   if (!container) return;
+
+  // Ambil data terkini dari tabel desktop
+  const trs = document.querySelectorAll('#entries-body tr');
   container.innerHTML = '';
-  const rows = getRows();
-  rows.forEach((r, i) => {
+
+  if (trs.length === 0) {
+    container.innerHTML = '<div style="text-align:center; padding:30px; color:var(--muted); font-size:15px;">Belum ada kegiatan. Tekan <strong>+ Tambah Baris</strong> di atas.</div>';
+    return;
+  }
+
+  trs.forEach((tr, i) => {
+    const tanggal = tr.querySelector('.inp-tanggal').value;
+    const hari    = tr.querySelector('.inp-hari').value;
+    const uraian  = tr.querySelector('.inp-uraian').value;
+    const link    = tr.querySelector('.inp-link').value;
+
     const card = document.createElement('div');
     card.className = 'entry-card';
-    card.setAttribute('data-idx', i);
     card.innerHTML = `
       <div class="entry-card-header">
         <div class="entry-card-num">${i+1}</div>
-        <button class="btn-del" onclick="delRowMobile(${i})" title="Hapus baris ini">✕ Hapus</button>
+        <button class="btn-del" onclick="delRowMobile(${i})" style="font-size:14px; padding:8px 14px;">🗑️ Hapus</button>
       </div>
       <div class="field">
         <label>📅 Tanggal</label>
-        <input type="date" class="mc-tanggal" value="${r.tanggal}" onchange="updateMobileRow(${i},'tanggal',this.value); autoHariMobile(${i},this.value)">
+        <input type="date" value="${tanggal}" onchange="syncToDesktop(${i},'tanggal',this.value); autoHariMobile(${i},this.value); scheduleAutoSave()">
       </div>
       <div class="field">
         <label>📆 Hari</label>
-        <input type="text" class="mc-hari" value="${r.hari}" placeholder="Senin" oninput="updateMobileRow(${i},'hari',this.value)">
+        <input type="text" value="${hari}" placeholder="Senin" oninput="syncToDesktop(${i},'hari',this.value); scheduleAutoSave()">
       </div>
       <div class="field">
         <label>📝 Uraian Kegiatan</label>
-        <input type="text" class="mc-uraian" value="${r.uraian}" placeholder="Tulis kegiatan hari ini..." oninput="updateMobileRow(${i},'uraian',this.value)">
+        <input type="text" value="${uraian}" placeholder="Tulis kegiatan hari ini..." oninput="syncToDesktop(${i},'uraian',this.value); scheduleAutoSave()">
       </div>
       <div class="field">
-        <label>🔗 Link Bukti Dokumen</label>
-        <input type="text" class="mc-link" value="${r.link}" placeholder="https://drive.google.com/..." oninput="updateMobileRow(${i},'link',this.value)">
+        <label>🔗 Link Bukti Dokumen <span style="font-weight:400;font-size:12px;">(opsional)</span></label>
+        <input type="url" inputmode="url" value="${link}" placeholder="https://drive.google.com/..." oninput="syncToDesktop(${i},'link',this.value); scheduleAutoSave()">
       </div>
     `;
     container.appendChild(card);
   });
 }
 
-function updateMobileRow(idx, field, value) {
+function syncToDesktop(idx, field, value) {
   const trs = document.querySelectorAll('#entries-body tr');
   if (!trs[idx]) return;
   const cls = { tanggal:'inp-tanggal', hari:'inp-hari', uraian:'inp-uraian', link:'inp-link' };
-  trs[idx].querySelector('.' + cls[field]).value = value;
-  scheduleAutoSave();
+  const input = trs[idx].querySelector('.' + cls[field]);
+  if (input) input.value = value;
 }
 
 function autoHariMobile(idx, dateVal) {
   if (!dateVal) return;
   const d = new Date(dateVal);
   const hari = HARI[d.getDay()];
-  // Update desktop
-  const trs = document.querySelectorAll('#entries-body tr');
-  if (trs[idx]) trs[idx].querySelector('.inp-hari').value = hari;
-  // Update mobile card
-  const cards = document.querySelectorAll('#mobile-entries .entry-card');
-  if (cards[idx]) {
-    const hariInput = cards[idx].querySelector('.mc-hari');
-    if (hariInput) hariInput.value = hari;
-  }
+  // Sync ke desktop
+  syncToDesktop(idx, 'hari', hari);
+  // Re-render kartu supaya field Hari ter-update
+  renderMobileEntries();
 }
 
 function delRowMobile(idx) {
@@ -953,9 +963,7 @@ function delRowMobile(idx) {
   scheduleAutoSave();
 }
 
-function syncMobileCard(input) {
-  renderMobileEntries();
-}
+
 
 function autoHari(input) {
   if (!input.value) return;
@@ -1185,10 +1193,7 @@ async function exportPDF() {
 
   // Underline
   const lineY = sigImgY + sigImgH + 3;
-  doc.setDrawColor(0);
-  doc.setLineWidth(0.4);
-  doc.line(leftX + 4,  lineY, leftX + sigBlockW - 4,  lineY);
-  doc.line(rightX + 4, lineY, rightX + sigBlockW - 4, lineY);
+  // (garis bawah dihapus)
 
   // Names bold, centered under line
   doc.setFont('helvetica', 'bold');
