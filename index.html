@@ -660,7 +660,6 @@
       <div class="note">📅 Isi kegiatan harian Anda. Tekan <strong>💾 SIMPAN SEKARANG</strong> di atas setelah selesai mengisi — data akan tersimpan dan bisa dilanjutkan besok.</div>
       <div class="entries-header">
         <div class="section-title" style="margin:0">Daftar Kegiatan Harian</div>
-        <button class="btn-add" onclick="addRow()">+ Tambah Baris</button>
       </div>
 
       <!-- Desktop table view -->
@@ -683,7 +682,13 @@
       <!-- Mobile card view -->
       <div id="mobile-entries"></div>
 
-      <div style="margin-top:16px; display:flex; gap:10px; flex-wrap:wrap;">
+      <div style="margin-top:14px;">
+        <button class="btn-add" onclick="addRow()" style="width:100%; justify-content:center; font-size:16px; padding:16px; border-radius:12px;">
+          ＋ Tambah Baris Kegiatan
+        </button>
+      </div>
+
+      <div style="margin-top:12px; display:flex; gap:10px; flex-wrap:wrap;">
         <button class="btn-export save-btn" style="flex:none; padding:14px 22px; font-size:15px;" onclick="saveData()">
           <span>💾</span> Simpan Kegiatan
         </button>
@@ -900,7 +905,7 @@ function renderMobileEntries() {
   container.innerHTML = '';
 
   if (trs.length === 0) {
-    container.innerHTML = '<div style="text-align:center; padding:30px; color:var(--muted); font-size:15px;">Belum ada kegiatan. Tekan <strong>+ Tambah Baris</strong> di atas.</div>';
+    container.innerHTML = '<div style="text-align:center; padding:30px; color:var(--muted); font-size:15px;">Belum ada kegiatan. Tekan <strong>+ Tambah Baris Kegiatan</strong> di bawah.</div>';
     return;
   }
 
