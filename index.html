@@ -1,0 +1,1389 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>Laporan Kinerja Harian ASN</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --navy: #0f2951;
+    --navy-mid: #1a3a6b;
+    --navy-light: #2952a3;
+    --gold: #d4a017;
+    --gold-light: #f0c84a;
+    --surface: #f7f9fc;
+    --card: #ffffff;
+    --text: #1a2340;
+    --muted: #6b7a99;
+    --border: #dde4f0;
+    --accent-bg: #eef3fb;
+    --danger: #c0392b;
+    --success: #1a7a4a;
+    --radius: 14px;
+    --radius-sm: 8px;
+  }
+
+  body {
+    font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+    background: var(--surface);
+    color: var(--text);
+    min-height: 100vh;
+    font-size: 16px;
+  }
+
+  /* HEADER */
+  .header {
+    background: linear-gradient(135deg, var(--navy) 0%, var(--navy-mid) 60%, var(--navy-light) 100%);
+    padding: 0;
+    position: relative;
+    overflow: hidden;
+  }
+  .header::before {
+    content: '';
+    position: absolute;
+    top: -60px; right: -60px;
+    width: 240px; height: 240px;
+    background: rgba(212,160,23,0.12);
+    border-radius: 50%;
+  }
+  .header::after {
+    content: '';
+    position: absolute;
+    bottom: -40px; left: 40px;
+    width: 160px; height: 160px;
+    background: rgba(255,255,255,0.04);
+    border-radius: 50%;
+  }
+  .header-inner {
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 36px 32px 28px;
+    position: relative;
+    z-index: 1;
+  }
+  .header-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: rgba(212,160,23,0.18);
+    border: 1px solid rgba(212,160,23,0.4);
+    border-radius: 20px;
+    padding: 5px 14px;
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--gold-light);
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    margin-bottom: 14px;
+  }
+  .header-badge::before { content: '🏛'; font-size: 13px; }
+  .header h1 {
+    font-size: 22px;
+    font-weight: 700;
+    color: #fff;
+    line-height: 1.25;
+    margin-bottom: 6px;
+  }
+  .header h1 span { color: var(--gold-light); }
+  .header p {
+    font-size: 14px;
+    color: rgba(255,255,255,0.7);
+    margin-top: 4px;
+  }
+
+  /* TABS */
+  .tabs {
+    background: var(--navy);
+    border-top: 1px solid rgba(255,255,255,0.08);
+  }
+  .tabs-inner {
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 0 32px;
+    display: flex;
+    gap: 0;
+  }
+  .tab-btn {
+    background: none;
+    border: none;
+    padding: 16px 16px;
+    font-size: 14px;
+    font-weight: 600;
+    color: rgba(255,255,255,0.5);
+    cursor: pointer;
+    border-bottom: 3px solid transparent;
+    transition: all 0.2s;
+    position: relative;
+    white-space: nowrap;
+  }
+  .tab-btn.active {
+    color: var(--gold-light);
+    border-bottom-color: var(--gold);
+  }
+  .tab-btn:hover:not(.active) { color: rgba(255,255,255,0.8); }
+
+  /* MAIN */
+  .main {
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 28px 32px;
+  }
+
+  /* PANELS */
+  .panel { display: none; }
+  .panel.active { display: block; }
+
+  /* SECTION CARD */
+  .section-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 24px 28px;
+    margin-bottom: 20px;
+  }
+  .section-title {
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--navy);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-bottom: 18px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .section-title::before {
+    content: '';
+    display: inline-block;
+    width: 3px; height: 16px;
+    background: var(--gold);
+    border-radius: 2px;
+  }
+
+  /* FORM GRID */
+  .form-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+  }
+  .form-grid.three { grid-template-columns: 1fr 1fr 1fr; }
+  .form-grid.full { grid-template-columns: 1fr; }
+  .field { display: flex; flex-direction: column; gap: 6px; }
+  .field.span2 { grid-column: 1 / -1; }
+  label {
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--navy);
+    letter-spacing: 0.02em;
+  }
+  input, select, textarea {
+    border: 2px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 13px 16px;
+    font-size: 16px;
+    font-family: inherit;
+    color: var(--text);
+    background: var(--surface);
+    transition: border-color 0.2s;
+    width: 100%;
+  }
+  input:focus, select:focus, textarea:focus {
+    outline: none;
+    border-color: var(--navy-light);
+    background: #fff;
+  }
+  textarea { resize: vertical; min-height: 70px; }
+
+  /* SIGNATURE UPLOAD */
+  .sig-zone {
+    border: 2px dashed var(--border);
+    border-radius: var(--radius);
+    padding: 24px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.2s;
+    position: relative;
+    background: var(--surface);
+  }
+  .sig-zone:hover, .sig-zone.dragover {
+    border-color: var(--navy-light);
+    background: var(--accent-bg);
+  }
+  .sig-zone input[type=file] {
+    position: absolute; inset: 0;
+    opacity: 0; cursor: pointer;
+    width: 100%; height: 100%;
+    padding: 0; background: none; border: none;
+  }
+  .sig-zone-icon { font-size: 28px; margin-bottom: 8px; }
+  .sig-zone p { font-size: 13px; color: var(--muted); }
+  .sig-zone p strong { color: var(--navy); }
+  .sig-preview {
+    max-height: 80px;
+    max-width: 200px;
+    object-fit: contain;
+    margin: 10px auto 0;
+    display: block;
+    border-radius: 6px;
+  }
+
+  /* ENTRIES TABLE */
+  .entries-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 16px;
+  }
+  .btn-add {
+    background: var(--navy);
+    color: #fff;
+    border: none;
+    border-radius: var(--radius-sm);
+    padding: 13px 22px;
+    font-size: 15px;
+    font-weight: 700;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    transition: background 0.2s;
+    min-height: 48px;
+  }
+  .btn-add:hover { background: var(--navy-light); }
+  .btn-add::before { content: '+'; font-size: 18px; line-height: 1; }
+
+  .entries-table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+    font-size: 13px;
+  }
+  .entries-table thead th {
+    background: var(--accent-bg);
+    color: var(--navy);
+    font-weight: 700;
+    font-size: 13px;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    padding: 10px 12px;
+    border-bottom: 1.5px solid var(--border);
+    text-align: left;
+  }
+  .entries-table thead th:first-child { border-radius: var(--radius-sm) 0 0 0; }
+  .entries-table thead th:last-child { border-radius: 0 var(--radius-sm) 0 0; }
+  .entries-table tbody tr:hover td { background: var(--accent-bg); }
+  .entries-table tbody td {
+    padding: 9px 12px;
+    border-bottom: 1px solid var(--border);
+    vertical-align: top;
+    background: #fff;
+    transition: background 0.15s;
+  }
+  .entries-table tbody td input {
+    border: none;
+    background: transparent;
+    font-size: 15px;
+    padding: 2px 0;
+    width: 100%;
+    min-height: 36px;
+  }
+  .entries-table tbody td input:focus { outline: none; }
+  .entry-row-num {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 22px; height: 22px;
+    background: var(--accent-bg);
+    border-radius: 50%;
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--navy);
+  }
+  .btn-del {
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: #cc4444;
+    font-size: 20px;
+    padding: 6px 10px;
+    border-radius: 6px;
+    transition: background 0.15s;
+    min-width: 44px;
+    min-height: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .btn-del:hover { background: #fdecea; }
+
+  /* ACTION BUTTONS */
+  .actions {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+    margin-top: 8px;
+  }
+  .btn-export {
+    flex: 1;
+    min-width: 160px;
+    padding: 16px 20px;
+    border: none;
+    border-radius: var(--radius);
+    font-size: 16px;
+    font-weight: 700;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    transition: all 0.2s;
+    min-height: 54px;
+  }
+  .btn-export.save-btn {
+    background: linear-gradient(135deg, #b7790a, var(--gold));
+    color: #fff;
+    box-shadow: 0 4px 16px rgba(183,121,10,0.25);
+  }
+  .btn-export.save-btn:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(183,121,10,0.4); }
+  .btn-export.pdf {
+    background: linear-gradient(135deg, #c0392b, #e74c3c);
+    color: #fff;
+  }
+  .btn-export.pdf:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(192,57,43,0.3); }
+  .btn-export.excel {
+    background: linear-gradient(135deg, #1a7a4a, #27ae60);
+    color: #fff;
+  }
+  .btn-export.excel:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(26,122,74,0.3); }
+  .btn-export.preview-btn {
+    background: linear-gradient(135deg, var(--navy), var(--navy-light));
+    color: #fff;
+  }
+  .btn-export.preview-btn:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(15,41,81,0.3); }
+  .btn-icon { font-size: 18px; }
+
+  /* PREVIEW PANEL */
+  #preview-panel .preview-wrap {
+    background: #e8ecf3;
+    border-radius: var(--radius);
+    padding: 28px;
+    min-height: 500px;
+  }
+  .doc-preview {
+    background: #fff;
+    max-width: 740px;
+    margin: 0 auto;
+    padding: 48px 52px;
+    border-radius: 4px;
+    box-shadow: 0 4px 32px rgba(0,0,0,0.12);
+    font-family: 'Times New Roman', serif;
+    font-size: 12px;
+    color: #111;
+    line-height: 1.5;
+  }
+  .doc-title { text-align: center; font-size: 14px; font-weight: bold; margin-bottom: 2px; }
+  .doc-subtitle { text-align: center; font-size: 12px; margin-bottom: 16px; }
+  .doc-info { margin-bottom: 16px; }
+  .doc-info-row { display: flex; gap: 0; margin-bottom: 3px; font-size: 12px; }
+  .doc-info-label { min-width: 180px; }
+  .doc-tbl { width: 100%; border-collapse: collapse; margin-top: 8px; }
+  .doc-tbl th { border: 1px solid #333; padding: 5px 8px; font-size: 11px; text-align: center; background: #f0f0f0; }
+  .doc-tbl td { border: 1px solid #333; padding: 5px 8px; font-size: 11px; }
+  .doc-tbl .centered { text-align: center; }
+  .doc-sign { display: flex; justify-content: space-between; margin-top: 32px; font-size: 12px; }
+  .doc-sign-block { text-align: center; width: 44%; }
+  .doc-sign-label { line-height: 1.6; }
+  .doc-sign-img { height: 72px; display: flex; align-items: flex-end; justify-content: center; margin: 10px 0 0; }
+  .doc-sign-img img { max-height: 70px; max-width: 180px; object-fit: contain; }
+  .doc-sign-underline { border-top: 1.5px solid #111; width: 75%; margin: 6px auto 0; }
+  .doc-sign-name { font-weight: bold; font-size: 12.5px; margin-top: 5px; }
+
+  /* FOOTER CREDIT */
+  .app-footer {
+    text-align: center;
+    padding: 18px 0 28px;
+    font-size: 11.5px;
+    color: var(--muted);
+    border-top: 1px solid var(--border);
+    margin-top: 8px;
+  }
+  .app-footer strong { color: var(--navy); font-weight: 600; }
+
+  /* TOAST */
+  .toast {
+    position: fixed;
+    bottom: 28px; right: 16px; left: 16px;
+    background: var(--navy);
+    color: #fff;
+    padding: 18px 24px;
+    border-radius: var(--radius);
+    font-size: 16px;
+    font-weight: 600;
+    opacity: 0;
+    transform: translateY(16px);
+    transition: all 0.3s;
+    pointer-events: none;
+    z-index: 999;
+    text-align: center;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.25);
+  }
+  .toast.show { opacity: 1; transform: translateY(0); }
+  .toast.success { background: var(--success); }
+  .toast.error { background: var(--danger); }
+
+  /* HELP NOTE */
+  .note {
+    background: var(--accent-bg);
+    border-left: 4px solid var(--navy-light);
+    border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+    padding: 14px 18px;
+    font-size: 15px;
+    color: var(--navy);
+    margin-bottom: 16px;
+    line-height: 1.6;
+  }
+
+  /* SAVE BANNER */
+  .save-banner {
+    background: linear-gradient(135deg, #fff8e8, #fef3cc);
+    border: 2px solid var(--gold);
+    border-radius: var(--radius);
+    padding: 16px 20px;
+    margin-bottom: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+  .save-banner-text { font-size: 15px; color: #7a5a00; font-weight: 600; }
+  .save-banner-sub { font-size: 13px; color: #9a7a20; margin-top: 2px; font-weight: 400; }
+  .btn-save-main {
+    background: var(--gold);
+    color: #fff;
+    border: none;
+    border-radius: var(--radius-sm);
+    padding: 14px 28px;
+    font-size: 16px;
+    font-weight: 700;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    transition: all 0.2s;
+    white-space: nowrap;
+    min-height: 52px;
+    box-shadow: 0 4px 12px rgba(212,160,23,0.3);
+  }
+  .btn-save-main:hover { background: #b7790a; transform: translateY(-1px); }
+
+  /* MONTH BADGE */
+  .month-select-wrap { position: relative; }
+
+  @media (max-width: 640px) {
+    .main { padding: 14px 12px; }
+    .header-inner { padding: 20px 16px 18px; }
+    .header h1 { font-size: 19px; }
+    .tabs-inner { padding: 0 6px; overflow-x: auto; gap: 2px; }
+    .tab-btn { padding: 14px 10px; font-size: 12px; }
+    .form-grid { grid-template-columns: 1fr; }
+    .form-grid.three { grid-template-columns: 1fr; }
+    .actions { flex-direction: column; }
+    .doc-preview { padding: 20px 14px; }
+    .section-card { padding: 18px 14px; }
+    .entries-table { display: none; }
+    #mobile-entries { display: block; }
+    .save-banner { flex-direction: column; align-items: flex-start; }
+    .btn-save-main { width: 100%; justify-content: center; }
+  }
+  @media (min-width: 641px) {
+    #mobile-entries { display: none; }
+  }
+
+  /* MOBILE CARD VIEW for entries */
+  #mobile-entries { display: none; }
+  .entry-card {
+    background: var(--card);
+    border: 2px solid var(--border);
+    border-radius: var(--radius);
+    padding: 16px;
+    margin-bottom: 12px;
+    position: relative;
+  }
+  .entry-card-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 12px;
+  }
+  .entry-card-num {
+    background: var(--navy);
+    color: #fff;
+    width: 30px; height: 30px;
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 14px; font-weight: 700;
+  }
+  .entry-card .field { margin-bottom: 10px; }
+  .entry-card label { font-size: 13px; color: var(--muted); font-weight: 600; margin-bottom: 4px; display: block; }
+  .entry-card input {
+    border: 1.5px solid var(--border);
+    border-radius: 8px;
+    padding: 12px 14px;
+    font-size: 16px;
+    width: 100%;
+    background: var(--surface);
+  }
+  .entry-card input:focus { border-color: var(--navy-light); background: #fff; outline: none; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-inner">
+    <div class="header-badge">Kementerian Agama RI</div>
+    <h1>Laporan Capaian Kinerja Harian<br><span>Aparatur Sipil Negara (ASN)</span></h1>
+    <p>Generator otomatis laporan kinerja — ekspor ke PDF atau Excel</p>
+  </div>
+</div>
+
+<!-- SAVE BANNER - always visible -->
+<div style="background: var(--navy); padding: 10px 0; border-bottom: 2px solid var(--gold);">
+  <div style="max-width:900px; margin:0 auto; padding:0 16px; display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap;">
+    <div id="save-status" style="color:rgba(255,255,255,0.8); font-size:14px; font-weight:500;">
+      💾 Data belum disimpan
+    </div>
+    <button onclick="saveData()" style="background:var(--gold); color:#fff; border:none; border-radius:10px; padding:10px 22px; font-size:15px; font-weight:700; cursor:pointer; display:flex; align-items:center; gap:7px; min-height:44px; box-shadow:0 3px 10px rgba(212,160,23,0.4);">
+      💾 SIMPAN SEKARANG
+    </button>
+  </div>
+</div>
+
+<div class="tabs">
+  <div class="tabs-inner">
+    <button class="tab-btn active" onclick="switchTab('form')">📋 Input Data</button>
+    <button class="tab-btn" onclick="switchTab('kegiatan')">📅 Kegiatan Harian</button>
+    <button class="tab-btn" onclick="switchTab('ttd')">✍️ Tanda Tangan</button>
+    <button class="tab-btn" onclick="switchTab('preview')">👁 Preview & Ekspor</button>
+  </div>
+</div>
+
+<div class="main">
+
+  <!-- PANEL 1: DATA PEGAWAI -->
+  <div class="panel active" id="panel-form">
+    <div class="note">✏️ Isi data pegawai dan informasi instansi. Data Anda <strong>tersimpan otomatis</strong> di HP ini — tidak akan hilang walau browser ditutup. Klik <strong>💾 SIMPAN SEKARANG</strong> untuk memastikan data tersimpan.</div>
+
+    <div class="section-card">
+      <div class="section-title">Data Pegawai</div>
+      <div class="form-grid">
+        <div class="field span2">
+          <label>Nama Lengkap</label>
+          <input id="nama" type="text" placeholder="cth: Muhammad Nopran, S.Pd.">
+        </div>
+        <div class="field">
+          <label>NIP</label>
+          <input id="nip" type="text" placeholder="cth: 199311162025051002">
+        </div>
+        <div class="field">
+          <label>Jabatan</label>
+          <input id="jabatan" type="text" placeholder="cth: Guru Ahli Pertama">
+        </div>
+        <div class="field span2">
+          <label>Bidang Studi / Mata Pelajaran</label>
+          <input id="bidang" type="text" placeholder="cth: TIK / Informatika">
+        </div>
+      </div>
+    </div>
+
+    <div class="section-card">
+      <div class="section-title">Informasi Instansi</div>
+      <div class="form-grid">
+        <div class="field span2">
+          <label>Nama Instansi / Satuan Kerja</label>
+          <input id="instansi" type="text" placeholder="cth: MTsN 6 Pesisir Selatan">
+        </div>
+        <div class="field">
+          <label>Nama Kepala / Atasan</label>
+          <input id="kepala" type="text" placeholder="cth: Metriadi">
+        </div>
+        <div class="field">
+          <label>Kota Penandatanganan</label>
+          <input id="kota" type="text" placeholder="cth: Batang Kapas">
+        </div>
+        <div class="field">
+          <label>Bulan Laporan</label>
+          <select id="bulan">
+            <option value="" disabled selected>-- Pilih Bulan --</option>
+            <option value="Januari">Januari</option>
+            <option value="Februari">Februari</option>
+            <option value="Maret">Maret</option>
+            <option value="April">April</option>
+            <option value="Mei">Mei</option>
+            <option value="Juni">Juni</option>
+            <option value="Juli">Juli</option>
+            <option value="Agustus">Agustus</option>
+            <option value="September">September</option>
+            <option value="Oktober">Oktober</option>
+            <option value="November">November</option>
+            <option value="Desember">Desember</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>Tahun</label>
+          <input id="tahun" type="number" placeholder="cth: 2026" min="2020" max="2099">
+        </div>
+        <div class="field">
+          <label>Tanggal Tanda Tangan</label>
+          <input id="tgl-ttd" type="text" placeholder="cth: 02 Juni 2026">
+        </div>
+      </div>
+    </div>
+
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-top: 4px; flex-wrap:wrap; gap:10px;">
+      <button onclick="clearAllData()" style="background:none; border:1.5px solid var(--danger); color:var(--danger); border-radius:10px; padding:11px 18px; font-size:14px; font-weight:600; cursor:pointer;">
+        🗑️ Hapus Semua Data
+      </button>
+      <button class="btn-export preview-btn" style="flex:none; min-width:180px;" onclick="switchTab('kegiatan')">
+        Lanjut ke Kegiatan →
+      </button>
+    </div>
+  </div>
+
+  <!-- PANEL 2: KEGIATAN HARIAN -->
+  <div class="panel" id="panel-kegiatan">
+    <div class="section-card">
+      <div class="note">📅 Isi kegiatan harian Anda. Tekan <strong>💾 SIMPAN SEKARANG</strong> di atas setelah selesai mengisi — data akan tersimpan dan bisa dilanjutkan besok.</div>
+      <div class="entries-header">
+        <div class="section-title" style="margin:0">Daftar Kegiatan Harian</div>
+        <button class="btn-add" onclick="addRow()">+ Tambah Baris</button>
+      </div>
+
+      <!-- Desktop table view -->
+      <div style="overflow-x:auto;">
+        <table class="entries-table" id="entries-tbl">
+          <thead>
+            <tr>
+              <th style="width:40px">No</th>
+              <th style="width:130px">Tanggal</th>
+              <th style="width:100px">Hari</th>
+              <th>Uraian Kegiatan</th>
+              <th style="width:220px">Link Bukti Dokumen</th>
+              <th style="width:40px"></th>
+            </tr>
+          </thead>
+          <tbody id="entries-body"></tbody>
+        </table>
+      </div>
+
+      <!-- Mobile card view -->
+      <div id="mobile-entries"></div>
+
+      <div style="margin-top:16px; display:flex; gap:10px; flex-wrap:wrap;">
+        <button class="btn-export save-btn" style="flex:none; padding:14px 22px; font-size:15px;" onclick="saveData()">
+          <span>💾</span> Simpan Kegiatan
+        </button>
+        <button class="btn-export preview-btn" style="flex:none; padding:14px 22px; font-size:15px;" onclick="switchTab('ttd')">
+          Lanjut ke Tanda Tangan →
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- PANEL 3: TANDA TANGAN -->
+  <div class="panel" id="panel-ttd">
+    <div class="section-card">
+      <div class="section-title">Tanda Tangan Kepala / Atasan</div>
+      <p style="font-size:13px; color:var(--muted); margin-bottom:16px;">Upload gambar tanda tangan Kepala Satuan Kerja (PNG transparan disarankan)</p>
+      <div class="sig-zone" id="sig-zone-kepala" ondragover="dragOver(event, this)" ondragleave="dragLeave(this)" ondrop="dropFile(event,'kepala')">
+        <input type="file" accept="image/*" onchange="loadSig(event,'kepala')">
+        <div class="sig-zone-icon">🖊</div>
+        <p><strong>Klik atau seret gambar</strong> tanda tangan kepala</p>
+        <p style="font-size:11px; margin-top:4px;">PNG, JPG — maks 2MB</p>
+        <img class="sig-preview" id="sig-img-kepala" style="display:none">
+      </div>
+    </div>
+
+    <div class="section-card">
+      <div class="section-title">Tanda Tangan Guru / ASN Pelapor</div>
+      <p style="font-size:13px; color:var(--muted); margin-bottom:16px;">Upload gambar tanda tangan Anda (PNG transparan disarankan)</p>
+      <div class="sig-zone" id="sig-zone-guru" ondragover="dragOver(event, this)" ondragleave="dragLeave(this)" ondrop="dropFile(event,'guru')">
+        <input type="file" accept="image/*" onchange="loadSig(event,'guru')">
+        <div class="sig-zone-icon">✍️</div>
+        <p><strong>Klik atau seret gambar</strong> tanda tangan Anda</p>
+        <p style="font-size:11px; margin-top:4px;">PNG, JPG — maks 2MB</p>
+        <img class="sig-preview" id="sig-img-guru" style="display:none">
+      </div>
+    </div>
+
+    <div style="display:flex; justify-content:flex-end; margin-top:4px;">
+      <button class="btn-export preview-btn" style="flex:none; min-width:200px;" onclick="buildPreview(); switchTab('preview')">
+        Lihat Preview & Ekspor →
+      </button>
+    </div>
+  </div>
+
+  <!-- PANEL 4: PREVIEW & EKSPOR -->
+  <div class="panel" id="panel-preview">
+    <div class="section-card" style="padding:0; overflow:hidden;">
+      <div style="padding:18px 24px; border-bottom:1px solid var(--border); display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:12px;">
+        <div class="section-title" style="margin:0">Preview Dokumen</div>
+        <div class="actions" style="margin:0; flex-wrap:wrap;">
+          <button class="btn-export pdf" onclick="exportPDF()">
+            <span class="btn-icon">📄</span> Ekspor PDF
+          </button>
+          <button class="btn-export excel" onclick="exportExcel()">
+            <span class="btn-icon">📊</span> Ekspor Excel
+          </button>
+        </div>
+      </div>
+      <div class="preview-wrap" id="preview-wrap">
+        <div id="doc-preview-area" class="doc-preview"></div>
+      </div>
+    </div>
+  </div>
+
+</div><!-- /main -->
+
+<div class="main" style="padding-top:0;">
+  <div class="app-footer">
+    Aplikasi ini dibuat oleh &nbsp;<strong>Muhammad Nopran, S.Pd.</strong>&nbsp; — Guru TIK / Informatika &nbsp;|&nbsp; <strong>MTsN 6 Pesisir Selatan</strong>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ─── STATE ───────────────────────────────────────────────
+const sigs = { kepala: null, guru: null };
+const HARI = ['Minggu','Senin','Selasa','Rabu','Kamis','Jum\'at','Sabtu'];
+const STORAGE_KEY = 'laporan_kinerja_asn_v1';
+
+// ─── AUTO SAVE (setiap 30 detik & saat input berubah) ────
+let autoSaveTimer = null;
+function scheduleAutoSave() {
+  clearTimeout(autoSaveTimer);
+  autoSaveTimer = setTimeout(() => {
+    saveData(true); // silent auto-save
+  }, 3000); // 3 detik setelah berhenti mengetik
+}
+
+function saveData(silent = false) {
+  try {
+    const d = getData();
+    const payload = {
+      ...d,
+      sigs: { kepala: sigs.kepala, guru: sigs.guru },
+      savedAt: new Date().toLocaleString('id-ID')
+    };
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(payload));
+    updateSaveStatus(payload.savedAt);
+    if (!silent) showToast('✅ Data berhasil disimpan! Aman di HP ini.', 'success');
+  } catch(e) {
+    if (!silent) showToast('❌ Gagal menyimpan. Coba lagi.', 'error');
+  }
+}
+
+function updateSaveStatus(time) {
+  const el = document.getElementById('save-status');
+  if (el && time) {
+    el.textContent = '✅ Tersimpan: ' + time;
+    el.style.color = '#7adc9a';
+  }
+}
+
+function loadSavedData() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (!raw) return false;
+    const d = JSON.parse(raw);
+
+    // Restore form fields
+    const fields = ['nama','nip','jabatan','bidang','instansi','kepala','kota','tahun','tgl-ttd'];
+    fields.forEach(id => {
+      const el = document.getElementById(id);
+      if (el && d[id.replace('-','')]) el.value = d[id.replace('-','')];
+    });
+    // tgl-ttd special case
+    const tglEl = document.getElementById('tgl-ttd');
+    if (tglEl && d.tglTtd) tglEl.value = d.tglTtd;
+    // bulan select
+    const bulanEl = document.getElementById('bulan');
+    if (bulanEl && d.bulan) bulanEl.value = d.bulan;
+    // tahun
+    const tahunEl = document.getElementById('tahun');
+    if (tahunEl && d.tahun) tahunEl.value = d.tahun;
+
+    // Restore rows
+    if (d.rows && d.rows.length > 0) {
+      document.getElementById('entries-body').innerHTML = '';
+      d.rows.forEach(row => addRow(row));
+    }
+
+    // Restore signatures
+    if (d.sigs) {
+      if (d.sigs.kepala) {
+        sigs.kepala = d.sigs.kepala;
+        const img = document.getElementById('sig-img-kepala');
+        img.src = d.sigs.kepala; img.style.display = 'block';
+      }
+      if (d.sigs.guru) {
+        sigs.guru = d.sigs.guru;
+        const img = document.getElementById('sig-img-guru');
+        img.src = d.sigs.guru; img.style.display = 'block';
+      }
+    }
+
+    updateSaveStatus(d.savedAt);
+    return true;
+  } catch(e) {
+    return false;
+  }
+}
+
+// ─── TABS ────────────────────────────────────────────────
+function switchTab(name) {
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('panel-' + name).classList.add('active');
+  const tabMap = { form: 0, kegiatan: 1, ttd: 2, preview: 3 };
+  document.querySelectorAll('.tab-btn')[tabMap[name]].classList.add('active');
+}
+
+// ─── ENTRIES ─────────────────────────────────────────────
+function getRows() {
+  const rows = [];
+  document.querySelectorAll('#entries-body tr').forEach(tr => {
+    rows.push({
+      tanggal: tr.querySelector('.inp-tanggal').value,
+      hari:    tr.querySelector('.inp-hari').value,
+      uraian:  tr.querySelector('.inp-uraian').value,
+      link:    tr.querySelector('.inp-link').value,
+    });
+  });
+  return rows;
+}
+
+function addRow(data) {
+  const tbody = document.getElementById('entries-body');
+  const idx = tbody.rows.length + 1;
+  const tr = document.createElement('tr');
+  const d = data || { tanggal:'', hari:'', uraian:'', link:'' };
+
+  // Desktop table row
+  tr.innerHTML = `
+    <td><span class="entry-row-num">${idx}</span></td>
+    <td><input class="inp-tanggal" type="date" value="${d.tanggal}" onchange="autoHari(this); syncMobileCard(this); scheduleAutoSave()"></td>
+    <td><input class="inp-hari" type="text" value="${d.hari}" placeholder="Senin" oninput="scheduleAutoSave()"></td>
+    <td><input class="inp-uraian" type="text" value="${d.uraian}" placeholder="Uraian kegiatan..." oninput="scheduleAutoSave()"></td>
+    <td><input class="inp-link" type="text" value="${d.link}" placeholder="https://drive.google.com/..." oninput="scheduleAutoSave()"></td>
+    <td><button class="btn-del" onclick="delRow(this)" title="Hapus">✕</button></td>
+  `;
+  tbody.appendChild(tr);
+  renumber();
+  renderMobileEntries();
+}
+
+function renderMobileEntries() {
+  const container = document.getElementById('mobile-entries');
+  if (!container) return;
+  container.innerHTML = '';
+  const rows = getRows();
+  rows.forEach((r, i) => {
+    const card = document.createElement('div');
+    card.className = 'entry-card';
+    card.setAttribute('data-idx', i);
+    card.innerHTML = `
+      <div class="entry-card-header">
+        <div class="entry-card-num">${i+1}</div>
+        <button class="btn-del" onclick="delRowMobile(${i})" title="Hapus baris ini">✕ Hapus</button>
+      </div>
+      <div class="field">
+        <label>📅 Tanggal</label>
+        <input type="date" class="mc-tanggal" value="${r.tanggal}" onchange="updateMobileRow(${i},'tanggal',this.value); autoHariMobile(${i},this.value)">
+      </div>
+      <div class="field">
+        <label>📆 Hari</label>
+        <input type="text" class="mc-hari" value="${r.hari}" placeholder="Senin" oninput="updateMobileRow(${i},'hari',this.value)">
+      </div>
+      <div class="field">
+        <label>📝 Uraian Kegiatan</label>
+        <input type="text" class="mc-uraian" value="${r.uraian}" placeholder="Tulis kegiatan hari ini..." oninput="updateMobileRow(${i},'uraian',this.value)">
+      </div>
+      <div class="field">
+        <label>🔗 Link Bukti Dokumen</label>
+        <input type="text" class="mc-link" value="${r.link}" placeholder="https://drive.google.com/..." oninput="updateMobileRow(${i},'link',this.value)">
+      </div>
+    `;
+    container.appendChild(card);
+  });
+}
+
+function updateMobileRow(idx, field, value) {
+  const trs = document.querySelectorAll('#entries-body tr');
+  if (!trs[idx]) return;
+  const cls = { tanggal:'inp-tanggal', hari:'inp-hari', uraian:'inp-uraian', link:'inp-link' };
+  trs[idx].querySelector('.' + cls[field]).value = value;
+  scheduleAutoSave();
+}
+
+function autoHariMobile(idx, dateVal) {
+  if (!dateVal) return;
+  const d = new Date(dateVal);
+  const hari = HARI[d.getDay()];
+  // Update desktop
+  const trs = document.querySelectorAll('#entries-body tr');
+  if (trs[idx]) trs[idx].querySelector('.inp-hari').value = hari;
+  // Update mobile card
+  const cards = document.querySelectorAll('#mobile-entries .entry-card');
+  if (cards[idx]) {
+    const hariInput = cards[idx].querySelector('.mc-hari');
+    if (hariInput) hariInput.value = hari;
+  }
+}
+
+function delRowMobile(idx) {
+  const trs = document.querySelectorAll('#entries-body tr');
+  if (trs[idx]) { trs[idx].remove(); renumber(); }
+  renderMobileEntries();
+  scheduleAutoSave();
+}
+
+function syncMobileCard(input) {
+  renderMobileEntries();
+}
+
+function autoHari(input) {
+  if (!input.value) return;
+  const d = new Date(input.value);
+  input.closest('tr').querySelector('.inp-hari').value = HARI[d.getDay()];
+}
+
+function delRow(btn) {
+  btn.closest('tr').remove();
+  renumber();
+  renderMobileEntries();
+  scheduleAutoSave();
+}
+
+function renumber() {
+  document.querySelectorAll('#entries-body tr').forEach((tr, i) => {
+    tr.querySelector('.entry-row-num').textContent = i + 1;
+  });
+}
+
+// ─── SIGNATURE ───────────────────────────────────────────
+function loadSig(e, who) {
+  const file = e.target.files[0];
+  if (!file) return;
+  if (file.size > 2 * 1024 * 1024) { showToast('File terlalu besar (maks 2MB)', 'error'); return; }
+  const reader = new FileReader();
+  reader.onload = ev => {
+    sigs[who] = ev.target.result;
+    const img = document.getElementById('sig-img-' + who);
+    img.src = ev.target.result;
+    img.style.display = 'block';
+    showToast('✅ Tanda tangan berhasil diupload', 'success');
+  };
+  reader.readAsDataURL(file);
+}
+
+function dragOver(e, el) { e.preventDefault(); el.classList.add('dragover'); }
+function dragLeave(el) { el.classList.remove('dragover'); }
+function dropFile(e, who) {
+  e.preventDefault();
+  dragLeave(document.getElementById('sig-zone-' + who));
+  const file = e.dataTransfer.files[0];
+  if (!file || !file.type.startsWith('image/')) { showToast('Harus file gambar', 'error'); return; }
+  const reader = new FileReader();
+  reader.onload = ev => {
+    sigs[who] = ev.target.result;
+    const img = document.getElementById('sig-img-' + who);
+    img.src = ev.target.result;
+    img.style.display = 'block';
+    showToast('✅ Tanda tangan berhasil diupload', 'success');
+  };
+  reader.readAsDataURL(file);
+}
+
+// ─── DATA HELPERS ─────────────────────────────────────────
+function getData() {
+  return {
+    nama: document.getElementById('nama').value.trim(),
+    nip: document.getElementById('nip').value.trim(),
+    jabatan: document.getElementById('jabatan').value.trim(),
+    bidang: document.getElementById('bidang').value.trim(),
+    instansi: document.getElementById('instansi').value.trim(),
+    kepala: document.getElementById('kepala').value.trim(),
+    kota: document.getElementById('kota').value.trim(),
+    bulan: document.getElementById('bulan').value,
+    tahun: document.getElementById('tahun').value,
+    tglTtd: document.getElementById('tgl-ttd').value.trim(),
+    rows: getRows()
+  };
+}
+
+// ─── PREVIEW ─────────────────────────────────────────────
+function buildPreview() {
+  const d = getData();
+  const area = document.getElementById('doc-preview-area');
+
+  let rowsHtml = d.rows.map((r, i) => `
+    <tr>
+      <td class="centered">${i+1}</td>
+      <td>${r.tanggal}</td>
+      <td>${r.hari}</td>
+      <td>${r.uraian}</td>
+      <td style="word-break:break-all; font-size:9px; color:#1a5fb4;">${r.link}</td>
+    </tr>
+  `).join('');
+
+  const sigKepalaHtml = sigs.kepala
+    ? `<img src="${sigs.kepala}" style="max-height:70px; max-width:180px; object-fit:contain;">`
+    : `<div style="height:70px;"></div>`;
+  const sigGuruHtml = sigs.guru
+    ? `<img src="${sigs.guru}" style="max-height:70px; max-width:180px; object-fit:contain;">`
+    : `<div style="height:70px;"></div>`;
+
+  area.innerHTML = `
+    <div class="doc-title">LAPORAN CAPAIAN KINERJA HARIAN</div>
+    <div class="doc-title">APARATUR SIPIL NEGARA (ASN) ${d.instansi.toUpperCase()}</div>
+    <div class="doc-subtitle">BULAN ${d.bulan.toUpperCase()} ${d.tahun}</div>
+
+    <div class="doc-info">
+      <div class="doc-info-row"><span class="doc-info-label">Nama Pegawai</span><span>: ${d.nama}</span></div>
+      <div class="doc-info-row"><span class="doc-info-label">NIP</span><span>: ${d.nip}</span></div>
+      <div class="doc-info-row"><span class="doc-info-label">Jabatan</span><span>: ${d.jabatan}</span></div>
+      <div class="doc-info-row"><span class="doc-info-label">Bidang Studi Yang Diampu</span><span>: ${d.bidang}</span></div>
+    </div>
+
+    <table class="doc-tbl">
+      <thead>
+        <tr>
+          <th style="width:30px">No</th>
+          <th style="width:90px">Tanggal</th>
+          <th style="width:70px">Hari</th>
+          <th>Uraian Kegiatan</th>
+          <th style="width:180px">Bukti Dokumen</th>
+        </tr>
+      </thead>
+      <tbody>${rowsHtml}</tbody>
+    </table>
+
+    <div class="doc-sign">
+      <div class="doc-sign-block">
+        <div class="doc-sign-label">Mengetahui,</div>
+        <div class="doc-sign-label">Kepala ${d.instansi}</div>
+        <div class="doc-sign-img">${sigKepalaHtml}</div>
+        <div class="doc-sign-underline"></div>
+        <div class="doc-sign-name">${d.kepala}</div>
+      </div>
+      <div class="doc-sign-block">
+        <div class="doc-sign-label">${d.kota}, ${d.tglTtd}</div>
+        <div class="doc-sign-label">Guru Mata Pelajaran</div>
+        <div class="doc-sign-img">${sigGuruHtml}</div>
+        <div class="doc-sign-underline"></div>
+        <div class="doc-sign-name">${d.nama}</div>
+      </div>
+    </div>
+  `;
+}
+
+// ─── EXPORT PDF ──────────────────────────────────────────
+async function exportPDF() {
+  buildPreview();
+  const d = getData();
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
+
+  const pageW = doc.internal.pageSize.getWidth();
+  const margin = 14;
+  const contentW = pageW - margin * 2;
+
+  // Title
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(13);
+  doc.text('LAPORAN CAPAIAN KINERJA HARIAN', pageW / 2, 16, { align: 'center' });
+  doc.text(`APARATUR SIPIL NEGARA (ASN) ${d.instansi.toUpperCase()}`, pageW / 2, 22, { align: 'center' });
+  doc.setFontSize(12);
+  doc.text(`BULAN ${d.bulan.toUpperCase()} ${d.tahun}`, pageW / 2, 28, { align: 'center' });
+
+  // Info
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(10);
+  let y = 36;
+  const infoData = [
+    ['Nama Pegawai', d.nama],
+    ['NIP', d.nip],
+    ['Jabatan', d.jabatan],
+    ['Bidang Studi Yang Diampu', d.bidang],
+  ];
+  infoData.forEach(([label, val]) => {
+    doc.text(`${label}`, margin, y);
+    doc.text(`: ${val}`, margin + 55, y);
+    y += 5.5;
+  });
+
+  // Table
+  const tableRows = d.rows.map((r, i) => [i+1, r.tanggal, r.hari, r.uraian, r.link]);
+  doc.autoTable({
+    startY: y + 3,
+    head: [['No', 'Tanggal', 'Hari', 'Uraian Kegiatan', 'Bukti Dokumen']],
+    body: tableRows,
+    margin: { left: margin, right: margin },
+    styles: { fontSize: 8, cellPadding: 2.5, overflow: 'linebreak' },
+    headStyles: { fillColor: [15, 41, 81], textColor: 255, fontStyle: 'bold' },
+    alternateRowStyles: { fillColor: [238, 243, 251] },
+    columnStyles: {
+      0: { cellWidth: 10, halign: 'center' },
+      1: { cellWidth: 28 },
+      2: { cellWidth: 22 },
+      3: { cellWidth: 80 },
+      4: { cellWidth: 'auto', fontSize: 7 }
+    }
+  });
+
+  // Signature block
+  let finalY = doc.lastAutoTable.finalY + 8;
+  const sigBlockW = 65;
+  const leftX  = margin + 5;
+  const rightX = pageW - margin - sigBlockW - 5;
+  const sigImgW = 38;
+  const sigImgH = 22;
+
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(10);
+  doc.setTextColor(0);
+
+  // Left block text
+  doc.text('Mengetahui,', leftX + sigBlockW / 2, finalY, { align: 'center' });
+  doc.text(`Kepala ${d.instansi}`, leftX + sigBlockW / 2, finalY + 5.5, { align: 'center' });
+
+  // Right block text
+  doc.text(`${d.kota}, ${d.tglTtd}`, rightX + sigBlockW / 2, finalY, { align: 'center' });
+  doc.text('Guru Mata Pelajaran', rightX + sigBlockW / 2, finalY + 5.5, { align: 'center' });
+
+  const sigImgY = finalY + 8;
+
+  // Signature images — centered within each block
+  if (sigs.kepala) {
+    try {
+      const imgX = leftX + (sigBlockW - sigImgW) / 2;
+      doc.addImage(sigs.kepala, 'PNG', imgX, sigImgY, sigImgW, sigImgH, '', 'FAST');
+    } catch(e) {}
+  }
+  if (sigs.guru) {
+    try {
+      const imgX = rightX + (sigBlockW - sigImgW) / 2;
+      doc.addImage(sigs.guru, 'PNG', imgX, sigImgY, sigImgW, sigImgH, '', 'FAST');
+    } catch(e) {}
+  }
+
+  // Underline
+  const lineY = sigImgY + sigImgH + 3;
+  doc.setDrawColor(0);
+  doc.setLineWidth(0.4);
+  doc.line(leftX + 4,  lineY, leftX + sigBlockW - 4,  lineY);
+  doc.line(rightX + 4, lineY, rightX + sigBlockW - 4, lineY);
+
+  // Names bold, centered under line
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(10);
+  doc.text(d.kepala, leftX + sigBlockW / 2, lineY + 5, { align: 'center' });
+  doc.text(d.nama,   rightX + sigBlockW / 2, lineY + 5, { align: 'center' });
+
+  // Add small credit at bottom of PDF
+  const pageH = doc.internal.pageSize.getHeight();
+  doc.setFont('helvetica', 'italic');
+  doc.setFontSize(7);
+  doc.setTextColor(150);
+  doc.text('Dibuat oleh: Muhammad Nopran, S.Pd. — MTsN 6 Pesisir Selatan', pageW / 2, pageH - 6, { align: 'center' });
+
+  doc.save(`Laporan_Kinerja_${d.bulan}_${d.tahun}_${d.nama.replace(/[^a-zA-Z0-9]/g,'_')}.pdf`);
+  showToast('✅ PDF berhasil diunduh!', 'success');
+}
+
+// ─── EXPORT EXCEL ────────────────────────────────────────
+function exportExcel() {
+  const d = getData();
+  const wb = XLSX.utils.book_new();
+
+  // Build rows
+  const dataRows = [
+    ['LAPORAN CAPAIAN KINERJA HARIAN', '', '', '', ''],
+    [`APARATUR SIPIL NEGARA (ASN) ${d.instansi.toUpperCase()}`, '', '', '', ''],
+    [`BULAN ${d.bulan.toUpperCase()} ${d.tahun}`, '', '', '', ''],
+    ['', '', '', '', ''],
+    ['Nama Pegawai', ':', d.nama, '', ''],
+    ['NIP', ':', d.nip, '', ''],
+    ['Jabatan', ':', d.jabatan, '', ''],
+    ['Bidang Studi Yang Diampu', ':', d.bidang, '', ''],
+    ['', '', '', '', ''],
+    ['No', 'Tanggal', 'Hari', 'Uraian Kegiatan', 'Bukti Dokumen'],
+    ...d.rows.map((r, i) => [i + 1, r.tanggal, r.hari, r.uraian, r.link]),
+    ['', '', '', '', ''],
+    ['Mengetahui,', '', '', '', `${d.kota}, ${d.tglTtd}`],
+    [`Kepala ${d.instansi}`, '', '', '', 'Guru Mata Pelajaran'],
+    ['', '', '', '', ''],
+    ['', '', '', '', ''],
+    ['', '', '', '', ''],
+    [d.kepala, '', '', '', d.nama],
+    ['', '', '', '', ''],
+    ['', '', '', '', 'Dibuat oleh: Muhammad Nopran, S.Pd.'],
+    ['', '', '', '', 'MTsN 6 Pesisir Selatan'],
+  ];
+
+  const ws = XLSX.utils.aoa_to_sheet(dataRows);
+
+  // Column widths (chars)
+  ws['!cols'] = [
+    { wch: 30 }, { wch: 14 }, { wch: 12 }, { wch: 52 }, { wch: 65 }
+  ];
+
+  // Row heights
+  ws['!rows'] = [
+    { hpt: 20 }, { hpt: 18 }, { hpt: 18 },
+  ];
+
+  // Merge title rows (A1:E1, A2:E2, A3:E3)
+  const headerRowCount = d.rows.length;
+  const tableStartRow = 9; // 0-indexed row 9 = row 10 in Excel
+
+  ws['!merges'] = [
+    { s:{r:0,c:0}, e:{r:0,c:4} },
+    { s:{r:1,c:0}, e:{r:1,c:4} },
+    { s:{r:2,c:0}, e:{r:2,c:4} },
+    // info label merges col A only, value merges C-E
+    { s:{r:4,c:2}, e:{r:4,c:4} },
+    { s:{r:5,c:2}, e:{r:5,c:4} },
+    { s:{r:6,c:2}, e:{r:6,c:4} },
+    { s:{r:7,c:2}, e:{r:7,c:4} },
+    // sign blocks
+    { s:{r:tableStartRow + headerRowCount + 2, c:0}, e:{r:tableStartRow + headerRowCount + 2, c:3} },
+    { s:{r:tableStartRow + headerRowCount + 3, c:0}, e:{r:tableStartRow + headerRowCount + 3, c:3} },
+    { s:{r:tableStartRow + headerRowCount + 7, c:0}, e:{r:tableStartRow + headerRowCount + 7, c:3} },
+  ];
+
+  // Style helper — apply style to a cell address
+  function cellStyle(addr, style) {
+    if (!ws[addr]) ws[addr] = { t: 's', v: '' };
+    ws[addr].s = style;
+  }
+
+  const boldCenter = { font: { bold: true }, alignment: { horizontal: 'center', vertical: 'center', wrapText: true } };
+  const bold = { font: { bold: true } };
+  const headerCell = {
+    font: { bold: true, color: { rgb: 'FFFFFF' } },
+    fill: { fgColor: { rgb: '0F2951' } },
+    alignment: { horizontal: 'center', vertical: 'center', wrapText: true },
+    border: {
+      top: { style: 'thin', color: { rgb: '000000' } },
+      bottom: { style: 'thin', color: { rgb: '000000' } },
+      left: { style: 'thin', color: { rgb: '000000' } },
+      right: { style: 'thin', color: { rgb: '000000' } }
+    }
+  };
+  const dataCellBorder = {
+    alignment: { vertical: 'top', wrapText: true },
+    border: {
+      top: { style: 'thin', color: { rgb: 'CCCCCC' } },
+      bottom: { style: 'thin', color: { rgb: 'CCCCCC' } },
+      left: { style: 'thin', color: { rgb: 'CCCCCC' } },
+      right: { style: 'thin', color: { rgb: 'CCCCCC' } }
+    }
+  };
+  const dataCellAlt = {
+    ...dataCellBorder,
+    fill: { fgColor: { rgb: 'EEF3FB' } }
+  };
+  const centerNum = { ...dataCellBorder, alignment: { horizontal: 'center', vertical: 'top' } };
+  const centerNumAlt = { ...dataCellAlt, alignment: { horizontal: 'center', vertical: 'top' } };
+
+  // Title styling
+  ['A1','A2','A3'].forEach(addr => {
+    if (ws[addr]) ws[addr].s = boldCenter;
+  });
+
+  // Info rows bold label
+  ['A5','A6','A7','A8'].forEach(addr => {
+    if (ws[addr]) ws[addr].s = bold;
+  });
+
+  // Table header row styling
+  const cols = ['A','B','C','D','E'];
+  cols.forEach(c => {
+    const addr = `${c}${tableStartRow + 1}`;
+    if (!ws[addr]) ws[addr] = { t: 's', v: '' };
+    ws[addr].s = headerCell;
+  });
+
+  // Data rows styling
+  d.rows.forEach((_, i) => {
+    const excelRow = tableStartRow + 2 + i;
+    const isAlt = i % 2 === 1;
+    cols.forEach((c, ci) => {
+      const addr = `${c}${excelRow}`;
+      if (!ws[addr]) ws[addr] = { t: 's', v: '' };
+      if (ci === 0) {
+        ws[addr].s = isAlt ? centerNumAlt : centerNum;
+      } else {
+        ws[addr].s = isAlt ? dataCellAlt : dataCellBorder;
+      }
+    });
+  });
+
+  // Sign rows bold
+  const signRow1 = tableStartRow + headerRowCount + 3;
+  const signRow2 = tableStartRow + headerRowCount + 4;
+  const signRow3 = tableStartRow + headerRowCount + 8;
+  if (ws[`A${signRow1}`]) ws[`A${signRow1}`].s = bold;
+  if (ws[`E${signRow1}`]) ws[`E${signRow1}`].s = bold;
+  if (ws[`A${signRow3}`]) ws[`A${signRow3}`].s = { font: { bold: true }, alignment: { horizontal: 'center' } };
+  if (ws[`E${signRow3}`]) ws[`E${signRow3}`].s = { font: { bold: true }, alignment: { horizontal: 'center' } };
+
+  XLSX.utils.book_append_sheet(wb, ws, 'Laporan Kinerja');
+  XLSX.writeFile(wb, `Laporan_Kinerja_${d.bulan}_${d.tahun}_${d.nama.replace(/[^a-zA-Z0-9]/g,'_')}.xlsx`);
+  showToast('✅ Excel berhasil diunduh!', 'success');
+}
+
+// ─── TOAST ───────────────────────────────────────────────
+let toastTimer;
+function showToast(msg, type = '') {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = 'toast show' + (type ? ' ' + type : '');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.className = 'toast', 4500);
+}
+
+function clearAllData() {
+  if (!confirm('Yakin ingin menghapus SEMUA data? Ini tidak bisa dibatalkan.\n\nGunakan ini jika ingin mulai laporan bulan baru.')) return;
+  localStorage.removeItem(STORAGE_KEY);
+  location.reload();
+}
+
+// ─── INIT ────────────────────────────────────────────────
+const hasSaved = loadSavedData();
+if (!hasSaved) {
+  addRow(); // mulai dengan 1 baris kosong hanya jika tidak ada data tersimpan
+}
+
+// Auto-save saat form diisi
+document.querySelectorAll('input, select, textarea').forEach(el => {
+  el.addEventListener('input', scheduleAutoSave);
+  el.addEventListener('change', scheduleAutoSave);
+});
+
+// Tampilkan notif data lama jika ada
+if (hasSaved) {
+  setTimeout(() => {
+    showToast('📂 Data sebelumnya berhasil dimuat! Silakan lanjutkan.', 'success');
+  }, 500);
+}
+</script>
+</body>
+</html>
