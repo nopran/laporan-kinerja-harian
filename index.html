@@ -1168,6 +1168,15 @@ async function exportPDF() {
   const sigImgW = 38;
   const sigImgH = 22;
 
+  // Pastikan ruang cukup untuk blok TTD (judul + gambar + nama ~ 45mm).
+  // Kalau tidak cukup, mulai halaman baru supaya TTD tidak terpotong.
+  const pageHCheck = doc.internal.pageSize.getHeight();
+  const sigBlockHeight = 45;
+  if (finalY + sigBlockHeight > pageHCheck - 15) {
+    doc.addPage();
+    finalY = margin + 10;
+  }
+
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(10);
   doc.setTextColor(0);
@@ -1206,13 +1215,6 @@ async function exportPDF() {
   doc.text(d.kepala, leftX + sigBlockW / 2, lineY + 5, { align: 'center' });
   doc.text(d.nama,   rightX + sigBlockW / 2, lineY + 5, { align: 'center' });
 
-  // Add small credit at bottom of PDF
-  const pageH = doc.internal.pageSize.getHeight();
-  doc.setFont('helvetica', 'italic');
-  doc.setFontSize(7);
-  doc.setTextColor(150);
-  doc.text('Dibuat oleh: Muhammad Nopran, S.Pd. — MTsN 6 Pesisir Selatan', pageW / 2, pageH - 6, { align: 'center' });
-
   doc.save(`Laporan_Kinerja_${d.bulan}_${d.tahun}_${d.nama.replace(/[^a-zA-Z0-9]/g,'_')}.pdf`);
   showToast('✅ PDF berhasil diunduh!', 'success');
 }
@@ -1242,9 +1244,6 @@ function exportExcel() {
     ['', '', '', '', ''],
     ['', '', '', '', ''],
     [d.kepala, '', '', '', d.nama],
-    ['', '', '', '', ''],
-    ['', '', '', '', 'Dibuat oleh: Muhammad Nopran, S.Pd.'],
-    ['', '', '', '', 'MTsN 6 Pesisir Selatan'],
   ];
 
   const ws = XLSX.utils.aoa_to_sheet(dataRows);
